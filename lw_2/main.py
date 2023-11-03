@@ -4,9 +4,6 @@ import math
 
 import cv2 as cv
 import matplotlib.pyplot as plt
-import matplotlib.transforms as tr
-import os
-import sys
 import argparse
 
 import numpy as np
@@ -30,7 +27,7 @@ def shift_image(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Shifted Image')
     plt.imshow(img_shifted)
-    plt.savefig("lw_2/pic_1.png")
+    plt.savefig("pic_1.png")
     plt.show()
 
 
@@ -52,7 +49,7 @@ def reflect_image(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Reflected Image')
     plt.imshow(img_reflected)
-    plt.savefig("lw_2/pic_2.png")
+    plt.savefig("pic_2.png")
     plt.show()
 
 
@@ -74,7 +71,7 @@ def scale_image(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Scaled Image')
     plt.imshow(img_scaled)
-    plt.savefig("lw_2/pic_3.png")
+    plt.savefig("pic_3.png")
     plt.show()
 
 
@@ -105,7 +102,7 @@ def rotate_image(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Rotated Image')
     plt.imshow(img_rot)
-    plt.savefig("lw_2/pic_4.png")
+    plt.savefig("pic_4.png")
     plt.show()
 
 
@@ -129,7 +126,7 @@ def bevel_image(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Beveled Image')
     plt.imshow(img_bev)
-    plt.savefig("lw_2/pic_5.png")
+    plt.savefig("pic_5.png")
     plt.show()
 
 
@@ -156,7 +153,7 @@ def piecewise_linear_tr(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Piecewised Image')
     plt.imshow(img_tr)
-    plt.savefig("lw_2/pic_6.png")
+    plt.savefig("pic_6.png")
     plt.show()
 
 
@@ -179,7 +176,7 @@ def projective_tr(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Projective Image')
     plt.imshow(img_tr)
-    plt.savefig("lw_2/pic_7.png")
+    plt.savefig("pic_7.png")
     plt.show()
 
 
@@ -217,7 +214,7 @@ def polynomial_tr(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Polynomial Image')
     plt.imshow(img_tr)
-    plt.savefig("lw_2/pic_8.png")
+    plt.savefig("pic_8.png")
     plt.show()
 
 
@@ -243,7 +240,7 @@ def harmonic_tr(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Sinusoidal Image')
     plt.imshow(img_tr)
-    plt.savefig("lw_2/pic_9.png")
+    plt.savefig("pic_9.png")
     plt.show()
 
 
@@ -253,34 +250,25 @@ def undistort_img(img_name):
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
     rows, cols = img.shape[:2]
 
-    # Create mesh grid for X, Y
     x_i, y_i = np.meshgrid(np.arange(cols), np.arange(rows))
-    # Shift and normalize grid
     x_mid = cols / 2.0
     y_mid = rows / 2.0
     x_i = x_i - x_mid
     y_i = y_i - y_mid
 
-    # Convert cartesian to polar and do transformation
     r, theta = cv.cartToPolar(x_i / x_mid, y_i / y_mid)
     F3 = 0.1
     F5 = 0.12
     r = r + F3 * r ** 3 + F5 * r ** 5
 
-    # Undo conversion, normalize and shift
     x, y = cv.polarToCart(r, theta)
     x = x * x_mid + x_mid
     y = y * y_mid + y_mid
 
-    # Remap
     img_un = cv.remap(img,
                       x.astype(np.float32),
                       y.astype(np.float32),
                       cv.INTER_LINEAR)
-
-    fig = plt.figure()
-    # TODO
-    # ax = fig
 
     fig = plt.figure()
     fig.set_figheight(3)
@@ -292,7 +280,7 @@ def undistort_img(img_name):
     ax = fig.add_subplot(1, 2, 2)
     ax.set_title('Undistorted Image')
     plt.imshow(img_un)
-    plt.savefig("lw_2/pic_10.png")
+    plt.savefig("pic_10.png")
     plt.show()
 
 
@@ -307,8 +295,8 @@ def crop_img(img_name):
     img_1 = img[:, :int(0.35 * cols), :]
     img_2 = img[:, int(0.25 * cols):, :]
 
-    cv.imwrite("lw_2/sample_3_1.png", img_1)
-    cv.imwrite("lw_2/sample_3_2.png", img_2)
+    cv.imwrite("sample_3_1.png", img_1)
+    cv.imwrite("sample_3_2.png", img_2)
 
 
 def stitch_images(img_left_name, img_right_name):
@@ -320,7 +308,7 @@ def stitch_images(img_left_name, img_right_name):
     templ = img_left[-templ_size:, :, :]
     res = cv.matchTemplate(img_right, templ, cv.TM_CCOEFF)
 
-    min_val, max_val, min_loc, max_loc = cv.minMaxLoc(res)
+    _, _, _, max_loc = cv.minMaxLoc(res)
 
     img_dst = np.zeros((img_left.shape[0],
                         img_left.shape[1] + img_right.shape[1] - max_loc[1] - templ_size,
@@ -345,7 +333,7 @@ def stitch_images(img_left_name, img_right_name):
 
     ax = fig.add_subplot(2, 2, 3)
     plt.imshow(img_dst)
-    plt.savefig("lw_2/pic_11.png")
+    plt.savefig("pic_11.png")
     plt.show()
 
 
@@ -358,6 +346,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # undistort_img("lw_2/sample_3.jpg")
     stitch_images(args.path_to_left_image,
                   args.path_to_right_image)

@@ -4,9 +4,6 @@ import math
 
 import cv2 as cv
 import matplotlib.pyplot as plt
-import matplotlib.transforms as tr
-import os
-import sys
 import argparse
 
 import numpy as np
@@ -19,7 +16,7 @@ def apply_salt_n_pepper_noise(img_name, amount=0.4):
     img_noise = skimage.util.random_noise(img, 's&p', amount=amount)
     img_noise = (255 * img_noise).clip(0, 255).astype(np.uint8)
 
-    cv.imwrite('lw_3/sample_1_1_3.png', img_noise)
+    cv.imwrite('sample_1_1_3.png', img_noise)
 
     return img_noise
 
@@ -45,7 +42,7 @@ def apply_salt_noise(img_name):
     img_noise = skimage.util.random_noise(img, 'salt', amount=0.4)
     img_noise = (255 * img_noise).clip(0, 255).astype(np.uint8)
 
-    cv.imwrite('lw_3/sample_1_1_1.png', img_noise)
+    cv.imwrite('sample_1_1_1.png', img_noise)
 
     plt.show()
 
@@ -57,7 +54,7 @@ def apply_speckle_noise(img_name, mean=2, var=0.2):
     img_noise = skimage.util.random_noise(img, 'speckle', mean=mean, var=var)
     img_noise = (255 * img_noise).clip(0, 255).astype(np.uint8)
 
-    cv.imwrite('lw_3/sample_1_3.png', img_noise)
+    cv.imwrite('sample_1_3.png', img_noise)
 
     return img_noise
 
@@ -69,7 +66,7 @@ def apply_additive_noise(img_name, mean=0, var=0.4):
     img_noise = skimage.util.random_noise(img, 'additive', mean=mean, var=var)
     img_noise = (255 * img_noise).clip(0, 255).astype(np.uint8)
 
-    cv.imwrite('lw_3/sample_1_2.png', img_noise)
+    cv.imwrite('sample_1_2.png', img_noise)
 
     return img_noise
 
@@ -88,7 +85,7 @@ def apply_gaussian_noise(img_name, mean=5, var=0.4, use_local_var=False):
 
     img_noise = (255 * img_noise).clip(0, 255).astype(np.uint8)
 
-    cv.imwrite('lw_3/sample_1_4.png', img_noise)
+    cv.imwrite('sample_1_4.png', img_noise)
 
     return img_noise
 
@@ -102,7 +99,7 @@ def apply_poisson_noise(img_name, peak=5.0):
     if img.dtype == np.uint8:
         img_noise = (255 * img_noise).clip(0, 255).astype(np.uint8)
 
-    cv.imwrite('lw_3/sample_1_5.png', img_noise)
+    cv.imwrite('sample_1_5.png', img_noise)
 
     return img_noise
 
@@ -142,7 +139,7 @@ def get_comparison(img_name):
     plt.imshow(img_poisson)
     ax.set_title("Poisson")
 
-    plt.savefig("lw_3/comparison.png")
+    plt.savefig("comparison.png")
     plt.show()
 
 
@@ -167,12 +164,9 @@ def filter_geom_average(img_name, kernel_size):
 
     img_src = cv.imread(img_name)
     kernel = np.ones(kernel_size)
-    # kernel /= kernel_size[0] / kernel_size[1]
     rows, cols = img_src.shape[:2]
 
-    # Convert to float and make image with border
     img_copy = img_src.astype(np.float32) / 255 if img_src.dtype == np.uint8 else img_src
-    # img_copy = img_src
     img_copy = cv.copyMakeBorder(img_copy,
                                  int((kernel_size[0] - 1) / 2),
                                  int(kernel_size[0] / 2),
@@ -180,27 +174,21 @@ def filter_geom_average(img_name, kernel_size):
                                  int(kernel_size[1] / 2),
                                  cv.BORDER_REPLICATE)
 
-    # Split into layers
     layers = cv.split(img_copy)
     layers_new = []
     for layer in layers:
 
-        # Calculate temporary matrices
         m = np.ones(img_src.shape[:2], np.float32)
 
-        # Perform filtering
         for i in range(kernel_size[0]):
             for j in range(kernel_size[1]):
                 temp = m * kernel[i, j]
                 m = temp * layer[i:i + rows, j:j + cols]
-                # temp = m * kernel[i, j]
-                # m = temp * layer[i:i + rows, j:j + cols]
 
         power = 1 / (kernel_size[0] * kernel_size[1])
         layer_new = np.power(m, power)
         layers_new.append(layer_new)
 
-    # Merge image back
     img_dst = cv.merge(layers_new)
 
     if img_src.dtype == np.uint8:
@@ -225,7 +213,6 @@ def filter_counter_harmonic_average(img_name, kernel_size=(3, 3), Q=0):
     kernel /= kernel_size[0] / kernel_size[1]
     rows, cols = img_src.shape[:2]
 
-    # Convert to float and make image with border
     img_copy = img_src.astype(np.float32) / 255 if img_src.dtype == np.uint8 else img_src
     img_copy = cv.copyMakeBorder(img_copy,
                                  int((kernel_size[0] - 1) / 2),
@@ -234,18 +221,15 @@ def filter_counter_harmonic_average(img_name, kernel_size=(3, 3), Q=0):
                                  int(kernel_size[1] / 2),
                                  cv.BORDER_REPLICATE)
 
-    # Split into layers
     layers = cv.split(img_copy)
     layers_new = []
     for layer in layers:
 
-        # Calculate temporary matrices
         m = np.zeros(img_src.shape[:2], np.float32)
         q = np.zeros(img_src.shape[:2], np.float32)
         n = np.power(layer, Q)
         p = np.power(layer, Q + 1)
 
-        # Perform filtering
         for i in range(kernel_size[0]):
             for j in range(kernel_size[1]):
                 m = m + kernel[i, j] * p[i:i + rows, j:j + cols]
@@ -254,7 +238,6 @@ def filter_counter_harmonic_average(img_name, kernel_size=(3, 3), Q=0):
         layer_new = m / q
         layers_new.append(layer_new)
 
-    # Merge image back
     img_dst = cv.merge(layers_new)
 
     if img_src.dtype == np.uint8:
@@ -284,8 +267,6 @@ def filter_gaussian(img_name, kernel=7, sigma=0.0):
     ax = fig.add_subplot(1, 2, 2)
     plt.imshow(img_dst)
 
-    # plt.show()
-
     return img_dst
 
 
@@ -310,16 +291,12 @@ def filter_median(img_name):
 def filter_weighted_rank(img_name, kernel_size, rank=4, use_median=False, use_weighted=False):
     img = cv.imread(img_name)
 
-    # Filter parameters
     kernel = np.ones(kernel_size, dtype=np.float32)
     if use_median:
         N = kernel_size[0] * kernel_size[1]
         rank = int(0.5 * (N - 1))
         print(f"Rank: {rank}")
     if use_weighted:
-        kernel = np.array([[0.8, 0.9, 0.8],
-                           [0.9, 1.0, 0.9],
-                           [0.8, 0.9, 0.8]], dtype=np.float32)
         kernel = np.array([[0.6, 0.7, 0.8, 0.7, 0.6],
                            [0.7, 0.8, 0.9, 0.8, 0.7],
                            [0.8, 0.9, 1.0, 0.9, 0.8],
@@ -327,9 +304,7 @@ def filter_weighted_rank(img_name, kernel_size, rank=4, use_median=False, use_we
                            [0.6, 0.7, 0.8, 0.7, 0.6]], dtype=np.float32)
     rows, cols = img.shape[:2]
 
-    # Convert to float and make image with boarders
     img_copy = img.astype(np.float32) / 255 if img.dtype == np.uint8 else img
-    # img_copy = img
     img_copy = cv.copyMakeBorder(img_copy,
                                  int((kernel_size[0] - 1) / 2),
                                  int(kernel_size[0] / 2),
@@ -337,7 +312,6 @@ def filter_weighted_rank(img_name, kernel_size, rank=4, use_median=False, use_we
                                  int(kernel_size[1] / 2),
                                  cv.BORDER_REPLICATE)
 
-    # Fill arrays for each kernel item
     img_layers = np.zeros(img.shape + (kernel_size[0] * kernel_size[1],),
                           dtype=np.float32)
     if img.ndim == 2:
@@ -349,13 +323,10 @@ def filter_weighted_rank(img_name, kernel_size, rank=4, use_median=False, use_we
             for j in range(kernel_size[1]):
                 img_layers[:, :, :, i * kernel_size[1] + j] = kernel[i, j] * img_copy[i:i + rows, j:j + cols, :]
 
-    # Sort arrays
     img_layers.sort()
 
-    # Choose layer with rank
     img_dst = img_layers[:, :, rank] if img.ndim == 2 else img_layers[:, :, :, rank]
 
-    # Convert back to uint as necessary
     if img.dtype == np.uint8:
         img_dst = (255 * img_dst).clip(0, 255).astype(np.uint8)
 
@@ -395,39 +366,6 @@ def adaptive_filter_iterate(img, i, j, kernel_size, s_max):
     return ret_val
 
 
-# def adaptive_filter_iterate(img, i, j, kernel_size, s_max):
-#
-#     coords = []
-#     for m in range(-int(kernel_size / 2), int(kernel_size / 2) + 1):
-#         for n in range(-int(kernel_size / 2), int(kernel_size / 2) + 1):
-#             print(i + m)
-#             print(j + n)
-#             print(img.shape)
-#             coords.append(img[i + m, j + n, 0])
-#     print(coords)
-#
-#     coords.sort()
-#     z_min = coords[0]
-#     print(int(kernel_size * kernel_size - 1))
-#     print(len(coords))
-#     z_max = coords[-1]
-#     z_max = coords[int(kernel_size * kernel_size - 1)]
-#     z_med = coords[int(kernel_size * kernel_size / 2)]
-#     z_xy = img[i, j, 0]
-#
-#     if z_med > z_min and z_med < z_max:
-#         if z_xy > z_min and z_xy < z_max:
-#             return z_xy
-#         else:
-#             return z_med
-#     else:
-#         kernel_size += 2
-#         if kernel_size <= s_max:
-#             return adaptive_filter_iterate(img, i, j, kernel_size, s_max)
-#         else:
-#             return z_med
-
-
 def filter_adaptive_median(img_name, min_kernel_size=3, max_kernel_size=5):
 
     img_src = cv.imread(img_name)
@@ -435,7 +373,6 @@ def filter_adaptive_median(img_name, min_kernel_size=3, max_kernel_size=5):
     s_min = min_kernel_size
     s_max = max_kernel_size
 
-    # Convert to float and make image with boarders
     img_copy = img_src.astype(np.float32) / 255 if img_src.dtype == np.uint8 else img_src
     img_copy = cv.copyMakeBorder(img_copy,
                                  int((s_min / 2) - 1),
@@ -469,13 +406,10 @@ def filter_wiener(img_name, kernel_size=(9, 9)):
 
     img = cv.imread(img_name)
 
-    # Filter parameters
     kernel = np.ones(kernel_size)
     rows, cols = img.shape[:2]
 
-    # Convert to float and make image with boarders
     img_copy = img.astype(np.float32) / 255 if img.dtype == np.uint8 else img
-    # img_copy = img
     img_copy = cv.copyMakeBorder(img_copy,
                                  int((kernel_size[0] - 1) / 2),
                                  int(kernel_size[0] / 2),
@@ -483,18 +417,15 @@ def filter_wiener(img_name, kernel_size=(9, 9)):
                                  int(kernel_size[1] / 2),
                                  cv.BORDER_REPLICATE)
 
-    # Split into layers
     layers = cv.split(img_copy)
     layers_new = []
     k_power = np.power(kernel, 2)
     for layer in layers:
 
-        # Calculate temporary matrices for img ** 2
         layer_power = np.power(layer, 2)
         m = np.zeros(img.shape[:2], np.float32)
         q = np.zeros(img.shape[:2], np.float32)
 
-        # Calculate variance values
         for i in range(kernel_size[0]):
             for j in range(kernel_size[1]):
                 m = m + kernel[i, j] * layer[i:i + rows, j:j + cols]
@@ -504,19 +435,15 @@ def filter_wiener(img_name, kernel_size=(9, 9)):
         q /= np.sum(kernel)
         q = q - m * m
 
-        # Calculate noise as an average variance
         v = np.sum(q) / img.size
 
-        # Perform filtering
         layer_new = layer[(kernel_size[0] - 1) // 2:(kernel_size[0] - 1) // 2 + rows,
                     (kernel_size[1] - 1) // 2:(kernel_size[1] - 1) // 2 + cols]
         layer_new = np.where(q < v, m, (layer_new - m) * (1 - v / q) + m)
         layers_new.append(layer_new)
 
-    # Merge image back
     img_dst = cv.merge(layers_new)
 
-    # Convert back to uint as necessary
     if img.dtype == np.uint8:
         img_dst = (255 * img_dst).clip(0, 255).astype(np.uint8)
 
@@ -645,7 +572,6 @@ def extract_canny_edges(img_name):
 
     img_src = cv.imread(img_name)
     img_dst = cv.Canny(img_src, 100, 200)
-    # img_dst = (255 * img_dst).clip(0, 255).astype(np.uint8)
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 2, 1)
@@ -671,56 +597,14 @@ def get_filtered(img_snp_name,
     img_gaussian = cv.imread(img_gaussian_name)
     img_poisson = cv.imread(img_poisson_name)
 
-    # kernel = 9
-    # sigma = 5.0
-    # img_1 = filter_gaussian(img_snp_name, kernel=kernel, sigma=sigma)
-    # img_2 = filter_gaussian(img_additive_name, kernel=kernel, sigma=sigma)
-    # img_3 = filter_gaussian(img_speckle_name, kernel=kernel, sigma=sigma)
-    # img_4 = filter_gaussian(img_gaussian_name, kernel=kernel, sigma=sigma)
-    # img_5 = filter_gaussian(img_poisson_name, kernel=kernel, sigma=sigma)
-
-    # kernel = (3, 3)
-    # Q = 0.5
-    # img_1 = filter_counter_harmonic_average(img_snp_name, kernel_size=kernel, Q=Q)
-    # img_2 = filter_counter_harmonic_average(img_additive_name, kernel_size=kernel, Q=Q)
-    # img_3 = filter_counter_harmonic_average(img_speckle_name, kernel_size=kernel, Q=Q)
-    # img_4 = filter_counter_harmonic_average(img_gaussian_name, kernel_size=kernel, Q=Q)
-    # img_5 = filter_counter_harmonic_average(img_poisson_name, kernel_size=kernel, Q=Q)
-
-    # TODO: adaptive; FOR REPORT: was (5, 5) and (9, 9)
-    # kernel_size = (9, 9)
-    # rank = 4
-    # use_median = True
-    # use_weighted = False
-    # img_1 = filter_weighted_rank(img_snp_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
-    # img_2 = filter_weighted_rank(img_additive_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
-    # img_3 = filter_weighted_rank(img_speckle_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
-    # img_4 = filter_weighted_rank(img_gaussian_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
-    # img_5 = filter_weighted_rank(img_poisson_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
-
-    # img_1 = filter_weighted_rank(img_snp_name, kernel_size=kernel_size, rank=rank, use_median=use_median,
-    #                              use_weighted=use_weighted)
-    # img_2 = filter_weighted_rank(img_additive_name, kernel_size=kernel_size, rank=rank, use_median=use_median,
-    #                              use_weighted=use_weighted)
-    # img_3 = filter_weighted_rank(img_speckle_name, kernel_size=kernel_size, rank=rank, use_median=use_median,
-    #                              use_weighted=use_weighted)
-    # img_4 = filter_weighted_rank(img_gaussian_name, kernel_size=kernel_size, rank=rank, use_median=use_median,
-    #                              use_weighted=use_weighted)
-    # img_5 = filter_weighted_rank(img_poisson_name, kernel_size=kernel_size, rank=rank, use_median=use_median,
-    #                              use_weighted=use_weighted)
-
-    # kernel_size = (15, 15)
-    # img_1 = filter_wiener(img_snp_name, kernel_size=kernel_size)
-    # img_2 = filter_wiener(img_additive_name, kernel_size=kernel_size)
-    # img_3 = filter_wiener(img_speckle_name, kernel_size=kernel_size)
-    # img_4 = filter_wiener(img_gaussian_name, kernel_size=kernel_size)
-    # img_5 = filter_wiener(img_poisson_name, kernel_size=kernel_size)
-
-    img_1 = filter_adaptive_median(img_snp_name)
-    img_2 = filter_adaptive_median(img_additive_name)
-    img_3 = filter_adaptive_median(img_speckle_name)
-    img_4 = filter_adaptive_median(img_gaussian_name)
-    img_5 = filter_adaptive_median(img_poisson_name)
+    kernel_size = (9, 9)
+    use_median = True
+    use_weighted = False
+    img_1 = filter_weighted_rank(img_snp_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
+    img_2 = filter_weighted_rank(img_additive_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
+    img_3 = filter_weighted_rank(img_speckle_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
+    img_4 = filter_weighted_rank(img_gaussian_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
+    img_5 = filter_weighted_rank(img_poisson_name, kernel_size=kernel_size, use_median=use_median, use_weighted=use_weighted)
 
     fig = plt.figure()
     fig.set_figheight(20)
@@ -766,7 +650,6 @@ def get_filtered(img_snp_name,
     ax.set_title("Filtered")
 
     plt.savefig("comparison_filter_9_2.png", bbox_inches='tight')
-    # plt.show()
 
 
 def get_edges(img_name):
@@ -821,16 +704,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # apply_salt_n_pepper_noise(args.path_to_image, amount=0.7)
-    # apply_salt_noise(args.path_to_image)
-    # get_comparison(args.path_to_image)
-    # get_filtered(args.snp,
-    #              args.additive,
-    #              args.speckle,
-    #              args.gaussian,
-    #              args.poisson)
-    # filter_geom_average(args.path_to_image, (3, 3))
-    # filter_counter_harmonic_average(args.path_to_image, (3, 3), Q=0)
-    # filter_adaptive_median(args.additive)
-    # extract_canny_edges(args.path_to_image)
     get_edges(args.path_to_image)

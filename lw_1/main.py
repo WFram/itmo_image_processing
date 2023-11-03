@@ -4,9 +4,6 @@ import math
 
 import cv2 as cv
 import matplotlib.pyplot as plt
-import matplotlib.transforms as tr
-import os
-import sys
 import argparse
 
 import numpy as np
@@ -14,7 +11,8 @@ import numpy as np
 
 def calc_hists_plt(img, img_new, hist_name):
 
-    hist_size = 256
+    HIST_SIZE = 256
+
     hist_range = [0, 256]
 
     img_b = img[:, :, 0]
@@ -29,19 +27,19 @@ def calc_hists_plt(img, img_new, hist_name):
     fig.set_figheight(8)
     fig.set_figwidth(22)
     ax = fig.add_subplot(2, 4, 1)
-    plt.hist(img_b.ravel(), hist_size, hist_range)
+    plt.hist(img_b.ravel(), HIST_SIZE, hist_range)
     ax.set_title('BLUE')
     ax.set_ylim([0, 20000])
     ax.set_xlim([0, 255])
 
     ax = fig.add_subplot(2, 4, 2)
-    plt.hist(img_g.ravel(), hist_size, hist_range)
+    plt.hist(img_g.ravel(), HIST_SIZE, hist_range)
     ax.set_title('GREEN')
     ax.set_ylim([0, 20000])
     ax.set_xlim([0, 255])
 
     ax = fig.add_subplot(2, 4, 3)
-    plt.hist(img_r.ravel(), hist_size, hist_range)
+    plt.hist(img_r.ravel(), HIST_SIZE, hist_range)
     ax.set_title('RED')
     ax.set_ylim([0, 20000])
     ax.set_xlim([0, 255])
@@ -51,19 +49,19 @@ def calc_hists_plt(img, img_new, hist_name):
     ax.set_title('Source Image')
 
     ax = fig.add_subplot(2, 4, 5)
-    plt.hist(img_new_b.ravel(), hist_size, hist_range)
+    plt.hist(img_new_b.ravel(), HIST_SIZE, hist_range)
     ax.set_title('BLUE')
     ax.set_ylim([0, 20000])
     ax.set_xlim([0, 255])
 
     ax = fig.add_subplot(2, 4, 6)
-    plt.hist(img_new_g.ravel(), hist_size, hist_range)
+    plt.hist(img_new_g.ravel(), HIST_SIZE, hist_range)
     ax.set_title('GREEN')
     ax.set_ylim([0, 20000])
     ax.set_xlim([0, 255])
 
     ax = fig.add_subplot(2, 4, 7)
-    plt.hist(img_new_r.ravel(), hist_size, hist_range)
+    plt.hist(img_new_r.ravel(), HIST_SIZE, hist_range)
     ax.set_title('RED')
     ax.set_ylim([0, 20000])
     ax.set_xlim([0, 255])
@@ -76,15 +74,14 @@ def calc_hists_plt(img, img_new, hist_name):
     plt.show()
 
 
-# For grayscale image (one layer)
 def calc_hist_cv(img):
 
-    hist_size = 256
+    HIST_SIZE = 256
     hist_range = (0, 256)
 
     hist = []
     for i in range(3):
-        hist.append(cv.calcHist(img, [i], None, [hist_size], hist_range))
+        hist.append(cv.calcHist(img, [i], None, [HIST_SIZE], hist_range))
 
     return hist
 
@@ -215,7 +212,6 @@ def rayleigh_conversion(img_file, alpha, show_hists):
     img_final = []
 
     hist = calc_hist_cv(img_bgr)
-    inv_alpha = 1 / alpha
     for i, layer in enumerate(img_new_bgr):
         img_min = layer.min()
         cum_hist = (255 * (np.cumsum(hist[i])) / (layer.shape[0] * layer.shape[1])).clip(0, 255).astype(np.uint8)
@@ -300,7 +296,7 @@ def equalize(img_file, show_hists):
     img_bgr = cv.split(img)
     img_final = []
 
-    for i, layer in enumerate(img_bgr):
+    for _, layer in enumerate(img_bgr):
         img_new = np.clip((cv.equalizeHist(layer)), 0, 255)
         img_final.append(img_new)
 
@@ -320,7 +316,7 @@ def clahe_equalize(img_file, show_hists):
     img_final = []
 
     clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    for i, layer in enumerate(img_bgr):
+    for _, layer in enumerate(img_bgr):
         img_new = np.clip((clahe.apply(layer)), 0, 255)
         img_final.append(img_new)
 
@@ -438,7 +434,6 @@ def calc_projection(img_file):
     proj_x_new = np.empty((proj_x.shape[0], 2))
     proj_x_new[:, 0] = proj_x[:]
     proj_x_new[:, 1] = range(0, proj_x.shape[0])
-    # print(proj_y_new[:, 1])
 
     fig = plt.figure()
     fig.set_figwidth(15)
@@ -471,19 +466,9 @@ if __name__ == '__main__':
     parser.add_argument('--path_to_image')
     args = parser.parse_args()
 
-    # shift_hists(args.path_to_image, shift_val=100, show_hists=True)
-    # stretch_nonlinear(args.path_to_image, alpha=1.1, show_hists=True)
-    # stretch_uniform(args.path_to_image, show_hists=True)
-    # exponential_conversion(args.path_to_image, alpha=5, show_hists=True)
-    # rayleigh_conversion(args.path_to_image, alpha=0.2, show_hists=True)
-    # law_2_3(args.path_to_image, show_hists=True)
-    # hyperbolic_conversion(args.path_to_image, alpha=0.05, show_hists=True)
-    # equalize(args.path_to_image, show_hists=True)
-    # clahe_equalize(args.path_to_image, show_hists=True)
-    # get_comparison(args.path_to_image,
-    #                alpha_stretch_nonlinear=1.1,
-    #                alpha_exponential_conversion=5,
-    #                alpha_rayleigh_conversion=0.2,
-    #                alpha_hyperbolic_conversion=0.05,
-    #                show_hists=False)
-    calc_projection(args.path_to_image)
+    get_comparison(args.path_to_image,
+                   alpha_stretch_nonlinear=1.1,
+                   alpha_exponential_conversion=5,
+                   alpha_rayleigh_conversion=0.2,
+                   alpha_hyperbolic_conversion=0.05,
+                   show_hists=False)
