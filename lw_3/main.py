@@ -696,11 +696,6 @@ def get_edges(img_name):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path_to_image')
-    parser.add_argument('--snp')
-    parser.add_argument('--additive')
-    parser.add_argument('--speckle')
-    parser.add_argument('--gaussian')
-    parser.add_argument('--poisson')
 
     args = parser.parse_args()
 
